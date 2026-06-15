@@ -39,9 +39,10 @@ RUN mkdir -p /workspace/models && \
 
 # ── Python deps ──────────────────────────────────────────────────────────────
 RUN pip install runpod boto3 Pillow numpy torchaudio
-
+RUN pip install torch==2.4.1 torchaudio==2.4.1 transformers==4.46.3 --index-url https://download.pytorch.org/whl/cu121
 # ── Worker code ──────────────────────────────────────────────────────────────
 WORKDIR /workspace/worker
+
 COPY handler.py voice.py video.py enhance.py storage.py ./
 
 ENV SADTALKER_DIR=/workspace/SadTalker
