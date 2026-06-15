@@ -47,7 +47,6 @@ def synthesize_video(
         "--preprocess", preprocess,
         "--size", str(size),
         "--pose_style", str(pose_style),
-        "--enhancer", "none",
     ]
 
     if still_mode:
