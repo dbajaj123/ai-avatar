@@ -1,8 +1,7 @@
-name: Build and Push Worker Image
+name: Build Base Image
 
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:  # manual trigger only
 
 jobs:
   build:
@@ -21,11 +20,11 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push worker image
+      - name: Build and push base image
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: Dockerfile
+          file: Dockerfile.base
           platforms: linux/amd64
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/ai-cloning-worker:latest
+          tags: ${{ secrets.DOCKER_USERNAME }}/ai-cloning-base:latest
