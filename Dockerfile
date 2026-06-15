@@ -14,6 +14,10 @@ RUN apt-get update && apt-get install -y \
     libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
+# ── Fix torchvision conflict before anything else ─────────────────────────────
+RUN pip install --upgrade torch==2.2.0 torchvision==0.17.0 torchaudio==2.2.0 \
+    --index-url https://download.pytorch.org/whl/cu121
+
 # ── SadTalker ────────────────────────────────────────────────────────────────
 RUN git clone https://github.com/OpenTalker/SadTalker.git /workspace/SadTalker
 WORKDIR /workspace/SadTalker
@@ -26,11 +30,8 @@ RUN mkdir -p /workspace/SadTalker/checkpoints && \
     wget -q -O /workspace/SadTalker/checkpoints/SadTalker_V0.0.2_512.safetensors \
     "https://github.com/OpenTalker/SadTalker/releases/download/v0.0.2-rc/SadTalker_V0.0.2_512.safetensors"
 
-# Download 3DMM shape model (from GitHub mirror instead of dlib.net)
+# Download 3DMM shape model
 RUN mkdir -p /workspace/SadTalker/gfpgan/weights && \
-    wget -q -O /workspace/SadTalker/gfpgan/weights/shape_predictor_68_face_landmarks.dat.bz2 \
-    "https://github.com/italojs/facial-landmarks-recognition/raw/master/shape_predictor_68_face_landmarks.dat" \
-    -O /workspace/SadTalker/gfpgan/weights/shape_predictor_68_face_landmarks.dat || \
     curl -L "https://huggingface.co/datasets/Gourieff/ReActor/resolve/main/models/sfd/shape_predictor_68_face_landmarks.dat" \
     -o /workspace/SadTalker/gfpgan/weights/shape_predictor_68_face_landmarks.dat
 
@@ -55,7 +56,7 @@ RUN pip install f5-tts
 RUN pip install \
     runpod \
     boto3 \
-    torchaudio \
+    torchaudio==2.2.0 \
     Pillow \
     numpy
 
