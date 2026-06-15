@@ -1,27 +1,19 @@
-# Base: RunPod PyTorch image with CUDA 12.1
-FROM --platform=linux/amd64 runpod/pytorch:2.2.0-py3.10-cuda12.1.1-devel-ubuntu22.04
+FROM --platform=linux/amd64 runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04
 
 WORKDIR /workspace
 
 # ── System deps ──────────────────────────────────────────────────────────────
 RUN apt-get update && apt-get install -y \
-    ffmpeg \
-    git \
-    wget \
-    curl \
-    bzip2 \
-    libgl1 \
-    libglib2.0-0 \
+    ffmpeg git wget curl bzip2 libgl1 libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
-# ── Fix torchvision conflict before anything else ─────────────────────────────
-RUN pip install --upgrade torch==2.2.0 torchvision==0.17.0 torchaudio==2.2.0 \
-    --index-url https://download.pytorch.org/whl/cu121
+# ── Chatterbox first (most likely to have conflicts) ─────────────────────────
+RUN pip install chatterbox-tts
 
 # ── SadTalker ────────────────────────────────────────────────────────────────
 RUN git clone https://github.com/OpenTalker/SadTalker.git /workspace/SadTalker
 WORKDIR /workspace/SadTalker
-RUN pip install -r requirements.txt
+RUN pip install -r requirements.txt --no-deps
 
 # Download SadTalker weights
 RUN mkdir -p /workspace/SadTalker/checkpoints && \
@@ -39,26 +31,14 @@ RUN mkdir -p /workspace/SadTalker/gfpgan/weights && \
 WORKDIR /workspace
 RUN git clone https://github.com/TencentARC/GFPGAN.git /workspace/GFPGAN
 WORKDIR /workspace/GFPGAN
-RUN pip install -r requirements.txt && pip install basicsr facexlib
+RUN pip install basicsr facexlib gfpgan
 
 RUN mkdir -p /workspace/models && \
     wget -q -O /workspace/models/GFPGANv1.4.pth \
     "https://github.com/TencentARC/GFPGAN/releases/download/v1.3.4/GFPGANv1.4.pth"
 
-# ── Chatterbox ───────────────────────────────────────────────────────────────
-WORKDIR /workspace
-RUN pip install chatterbox-tts
-
-# ── F5-TTS (fallback) ────────────────────────────────────────────────────────
-RUN pip install f5-tts
-
 # ── Python deps ──────────────────────────────────────────────────────────────
-RUN pip install \
-    runpod \
-    boto3 \
-    torchaudio==2.2.0 \
-    Pillow \
-    numpy
+RUN pip install runpod boto3 Pillow numpy torchaudio
 
 # ── Worker code ──────────────────────────────────────────────────────────────
 WORKDIR /workspace/worker
