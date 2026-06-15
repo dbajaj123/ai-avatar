@@ -27,7 +27,7 @@ def handler(job):
             return {"error": f"Missing required field: {field}"}
 
     job_id = job.get("id", str(uuid.uuid4()))
-    skip_enhance = job_input.get("skip_enhance", False)
+    skip_enhance = job_input.get("skip_enhance", True)  # enhancement broken with imageio>=2.28, skip by default
 
     workdir = Path(tempfile.mkdtemp(prefix=f"job_{job_id}_"))
     print(f"[{job_id}] Working dir: {workdir}")
