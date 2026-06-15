@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
 """
-Remote test: submit one job to a deployed RunPod serverless endpoint and poll for result.
-
-Usage:
-    python test_remote.py \
-        --photo path/to/face.jpg \
-        --audio path/to/voice.wav \
-        --script "Hello, this is a test." \
-        --endpoint-id YOUR_RUNPOD_ENDPOINT_ID \
-        --skip-enhance
-
-Env vars:
-    RUNPOD_API_KEY — your RunPod API key
+Remote test: submit one job to RunPod and save the output video locally.
 """
 
 import argparse
@@ -84,10 +73,11 @@ def main():
     parser.add_argument("--photo", required=True)
     parser.add_argument("--audio", required=True)
     parser.add_argument("--script", required=True)
-    parser.add_argument("--endpoint-id", required=True, help="RunPod endpoint ID")
+    parser.add_argument("--endpoint-id", required=True)
     parser.add_argument("--emotion", default="neutral")
     parser.add_argument("--skip-enhance", action="store_true")
-    parser.add_argument("--timeout", type=int, default=600, help="Poll timeout in seconds")
+    parser.add_argument("--output", default="output.mp4", help="Where to save the video")
+    parser.add_argument("--timeout", type=int, default=600)
     args = parser.parse_args()
 
     if not RUNPOD_API_KEY:
@@ -96,30 +86,27 @@ def main():
 
     print("── Encoding inputs ───────────────────────────────────────────")
     payload = {
-        "photo_b64": encode_file(args.photo),
-        "audio_b64": encode_file(args.audio),
-        "script": args.script,
-        "emotion": args.emotion,
+        "photo_b64":    encode_file(args.photo),
+        "audio_b64":    encode_file(args.audio),
+        "script":       args.script,
+        "emotion":      args.emotion,
         "skip_enhance": args.skip_enhance,
     }
     print(f"  Photo : {args.photo}")
     print(f"  Audio : {args.audio}")
     print(f"  Script: {args.script[:80]}")
-    print()
 
-    print("── Submitting job ────────────────────────────────────────────")
+    print("\n── Submitting job ────────────────────────────────────────────")
     job_id = submit_job(args.endpoint_id, payload)
 
-    print()
-    print("── Polling for result ────────────────────────────────────────")
+    print("\n── Polling for result ────────────────────────────────────────")
     result = poll_job(args.endpoint_id, job_id, timeout=args.timeout)
 
-    print()
-    print("── Result ────────────────────────────────────────────────────")
-    print(json.dumps(result, indent=2))
-
     if result.get("status") == "success":
-        print(f"\n✓ Video URL: {result['video_url']}")
+        # Decode base64 video and save locally
+        video_bytes = base64.b64decode(result["video_b64"])
+        Path(args.output).write_bytes(video_bytes)
+        print(f"\n✓ Video saved → {args.output} ({len(video_bytes) // 1024} KB)")
     else:
         print(f"\n✗ Error: {result.get('error')}")
         sys.exit(1)
