@@ -1,5 +1,5 @@
 # Base: RunPod PyTorch image with CUDA 12.1
-FROM runpod/pytorch:2.2.0-py3.10-cuda12.1.1-devel-ubuntu22.04
+FROM --platform=linux/amd64 runpod/pytorch:2.2.0-py3.10-cuda12.1.1-devel-ubuntu22.04
 
 WORKDIR /workspace
 
@@ -8,6 +8,8 @@ RUN apt-get update && apt-get install -y \
     ffmpeg \
     git \
     wget \
+    curl \
+    bzip2 \
     libgl1 \
     libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
@@ -24,11 +26,13 @@ RUN mkdir -p /workspace/SadTalker/checkpoints && \
     wget -q -O /workspace/SadTalker/checkpoints/SadTalker_V0.0.2_512.safetensors \
     "https://github.com/OpenTalker/SadTalker/releases/download/v0.0.2-rc/SadTalker_V0.0.2_512.safetensors"
 
-# Download 3DMM shape model
+# Download 3DMM shape model (from GitHub mirror instead of dlib.net)
 RUN mkdir -p /workspace/SadTalker/gfpgan/weights && \
     wget -q -O /workspace/SadTalker/gfpgan/weights/shape_predictor_68_face_landmarks.dat.bz2 \
-    "http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2" && \
-    bunzip2 /workspace/SadTalker/gfpgan/weights/shape_predictor_68_face_landmarks.dat.bz2
+    "https://github.com/italojs/facial-landmarks-recognition/raw/master/shape_predictor_68_face_landmarks.dat" \
+    -O /workspace/SadTalker/gfpgan/weights/shape_predictor_68_face_landmarks.dat || \
+    curl -L "https://huggingface.co/datasets/Gourieff/ReActor/resolve/main/models/sfd/shape_predictor_68_face_landmarks.dat" \
+    -o /workspace/SadTalker/gfpgan/weights/shape_predictor_68_face_landmarks.dat
 
 # ── GFPGAN ───────────────────────────────────────────────────────────────────
 WORKDIR /workspace
