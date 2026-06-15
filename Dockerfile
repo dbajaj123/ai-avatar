@@ -65,7 +65,8 @@ RUN pip install \
     PyWavelets \
     opencv-python \
     "joblib>=1.4.0" \
-    "imageio>=2.28.0"
+    "imageio==2.22.4" \
+    "imageio-ffmpeg>=0.4.8"
 
 # ── SadTalker source patches (numpy compat) ───────────────────────────────────
 # Patch 1: np.float removed in numpy 1.20+ 

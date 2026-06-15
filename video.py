@@ -3,7 +3,6 @@ Stage 2: Video synthesis via SadTalker
 Repo: https://github.com/OpenTalker/SadTalker
 
 Expected install path: /workspace/SadTalker
-Run setup.sh in Dockerfile to clone + install weights.
 """
 
 import os
@@ -31,8 +30,8 @@ def synthesize_video(
         photo_path: Reference face image (JPG/PNG, front-facing recommended)
         audio_path: Cloned speech WAV from Stage 1
         output_path: Final output MP4 path
-        still_mode: Minimal head motion — good for professional headshot style
-        preprocess: How SadTalker crops the face region
+        still_mode: Minimal head motion
+        preprocess: 'crop' (confirmed working) or 'full' (broken with numpy)
         size: 256 for speed, 512 for quality
         pose_style: Head pose variation seed (0 = neutral)
     """
@@ -58,12 +57,28 @@ def synthesize_video(
     result = subprocess.run(cmd, capture_output=True, text=True, cwd=str(SADTALKER_DIR))
 
     if result.returncode != 0:
-        print(result.stderr)
-        raise RuntimeError(f"SadTalker failed (exit {result.returncode})")
+        print(f"[video/sadtalker] STDOUT:\n{result.stdout}")
+        print(f"[video/sadtalker] STDERR:\n{result.stderr}")
+        raise RuntimeError(
+            f"SadTalker failed (exit {result.returncode})\n"
+            f"STDOUT: {result.stdout[-2000:]}\n"
+            f"STDERR: {result.stderr[-2000:]}"
+        )
 
+    # SadTalker outputs:
+    # - result_dir/TIMESTAMP.mp4  (final merged video)
+    # - result_dir/TIMESTAMP/input##audio.mp4  (intermediate)
+    # We want the top-level timestamped mp4
     mp4_files = list(result_dir.glob("*.mp4"))
     if not mp4_files:
+        # Fall back to subdirectory
+        mp4_files = list(result_dir.glob("*/*.mp4"))
+    if not mp4_files:
+        print(f"[video/sadtalker] Dir contents: {list(result_dir.rglob('*'))}")
         raise RuntimeError("SadTalker produced no MP4 output")
 
-    shutil.move(str(mp4_files[0]), output_path)
+    # Prefer top-level mp4 (the final one with audio merged)
+    top_level = [f for f in mp4_files if f.parent == result_dir]
+    chosen = top_level[0] if top_level else mp4_files[0]
+    shutil.move(str(chosen), output_path)
     print(f"[video/sadtalker] Saved → {output_path}")
