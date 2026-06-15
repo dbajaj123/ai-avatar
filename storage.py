@@ -1,56 +1,46 @@
 """
-Storage: upload output MP4 to Cloudflare R2
-R2 is S3-compatible — uses boto3 with custom endpoint.
-
-Env vars required:
-  R2_ACCOUNT_ID
-  R2_ACCESS_KEY_ID
-  R2_SECRET_ACCESS_KEY
-  R2_BUCKET_NAME
-  R2_PUBLIC_URL        e.g. https://assets.yourdomain.com
+Storage: Upload video to uguu.se and return public URL.
+Files are deleted after 24 hours — suitable for short-lived avatar links.
 """
 
-import os
-import boto3
-from botocore.config import Config
+import requests
+from pathlib import Path
 
 
-def _get_client():
-    account_id = os.environ["R2_ACCOUNT_ID"]
-    return boto3.client(
-        "s3",
-        endpoint_url=f"https://{account_id}.r2.cloudflarestorage.com",
-        aws_access_key_id=os.environ["R2_ACCESS_KEY_ID"],
-        aws_secret_access_key=os.environ["R2_SECRET_ACCESS_KEY"],
-        config=Config(signature_version="s3v4"),
-        region_name="auto",
-    )
-
-
-def upload_to_r2(local_path: str, r2_key: str) -> str:
+def upload_to_uguu(file_path: str) -> str:
     """
-    Upload a file to R2 and return its public URL.
-
+    Upload a file to uguu.se and return the public download URL.
+    
     Args:
-        local_path: Local file to upload
-        r2_key: Destination key in R2 bucket (e.g. "outputs/job_123/output.mp4")
-
+        file_path: Path to the file to upload
+        
     Returns:
-        Public URL to the uploaded file
+        Public URL string e.g. https://h.uguu.se/xxxxxx.mp4
+        
+    Raises:
+        RuntimeError if upload fails
     """
-    bucket = os.environ["R2_BUCKET_NAME"]
-    public_base = os.environ["R2_PUBLIC_URL"].rstrip("/")
+    path = Path(file_path)
+    if not path.exists():
+        raise FileNotFoundError(f"File not found: {file_path}")
 
-    client = _get_client()
+    print(f"[storage/uguu] Uploading {path.name} ({path.stat().st_size / 1024:.1f} KB)...")
 
-    print(f"[storage/r2] Uploading {local_path} → s3://{bucket}/{r2_key}")
-    client.upload_file(
-        local_path,
-        bucket,
-        r2_key,
-        ExtraArgs={"ContentType": "video/mp4"},
-    )
+    with open(file_path, "rb") as f:
+        response = requests.post(
+            "https://uguu.se/upload",
+            files={"files[]": (path.name, f, "video/mp4")},
+            timeout=60,
+        )
 
-    url = f"{public_base}/{r2_key}"
-    print(f"[storage/r2] Public URL: {url}")
+    if response.status_code != 200:
+        raise RuntimeError(f"uguu.se upload failed: HTTP {response.status_code}")
+
+    data = response.json()
+
+    if not data.get("success"):
+        raise RuntimeError(f"uguu.se upload error: {data.get('description', 'unknown error')}")
+
+    url = data["files"][0]["url"]
+    print(f"[storage/uguu] Uploaded → {url}")
     return url

@@ -28,5 +28,3 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/ai-cloning-worker:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max

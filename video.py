@@ -20,7 +20,7 @@ def synthesize_video(
     audio_path: str,
     output_path: str,
     still_mode: bool = False,
-    preprocess: str = "crop",
+    preprocess: str = "crop",  # 'crop' confirmed working; 'full' causes numpy array errors
     size: int = 256,
     pose_style: int = 0,
 ):

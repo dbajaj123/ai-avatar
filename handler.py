@@ -1,7 +1,7 @@
 """
 RunPod serverless handler for AI cloning pipeline.
-Pipeline: Chatterbox (voice) → SadTalker (video) → GFPGAN (enhance)
-Returns video as base64 (no storage needed for testing)
+Pipeline: Chatterbox (voice) → SadTalker (video) → GFPGAN (enhance) → uguu.se (upload)
+Returns public video URL.
 """
 
 import runpod
@@ -15,6 +15,7 @@ from pathlib import Path
 from voice import clone_voice
 from video import synthesize_video
 from enhance import enhance_video
+from storage import upload_to_uguu
 
 
 def handler(job):
@@ -73,18 +74,19 @@ def handler(job):
             )
             final_video = enhanced_video
 
-        # Return video as base64
-        print(f"[{job_id}] Encoding output video...")
-        video_b64 = base64.b64encode(final_video.read_bytes()).decode("utf-8")
+        # Stage 4: Upload to uguu.se
+        print(f"[{job_id}] Stage 4: Uploading to uguu.se...")
+        video_url = upload_to_uguu(str(final_video))
 
         return {
             "status": "success",
             "job_id": job_id,
-            "video_b64": video_b64,
+            "video_url": video_url,
             "stages": {
                 "voice":   "chatterbox",
                 "video":   "sadtalker",
                 "enhance": "skipped" if skip_enhance else "gfpgan",
+                "storage": "uguu.se",
             },
         }
 
