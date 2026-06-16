@@ -7,13 +7,11 @@ RUN apt-get update && apt-get install -y \
     git wget curl bzip2 libgl1 libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
-# ── XTTS v2 (all languages including English and Hindi) ───────────────────────
+# ── XTTS v2 ──────────────────────────────────────────────────────────────────
 RUN rm -rf /usr/lib/python3/dist-packages/blinker* && \
     pip install blinker --ignore-installed && \
-    pip install TTS
-
-# TTS 0.22.0 needs transformers<5
-RUN pip install "transformers>=4.33.0,<5.0.0"
+    pip install TTS && \
+    pip install "transformers==4.46.3"
 
 # Auto-accept license and pre-download XTTS v2 weights
 RUN sed -i 's/answer = input(" | | > ")/answer = "y"/' \
