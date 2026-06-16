@@ -7,6 +7,14 @@ RUN apt-get update && apt-get install -y \
     git wget curl bzip2 libgl1 libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
+# ── XTTS v2 (multilingual TTS) — install early so failures are caught fast ───
+RUN rm -rf /usr/lib/python3/dist-packages/blinker* && \
+    pip install blinker --ignore-installed && \
+    pip install TTS
+
+# Pre-download XTTS v2 model weights
+RUN TTS_AGREE_TERMS=1 python3 -c "from TTS.api import TTS; TTS('tts_models/multilingual/multi-dataset/xtts_v2', gpu=False)"
+
 # ── ffmpeg static binary ──────────────────────────────────────────────────────
 RUN wget https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz \
     -O /tmp/ffmpeg.tar.xz && \
@@ -104,13 +112,6 @@ RUN pip install "numpy>=1.24.0,<2.0.0" librosa==0.11.0 safetensors==0.5.3
 
 RUN pip install torchvision==0.21.0 \
     --index-url https://download.pytorch.org/whl/cu124
-
-# ── Worker deps ───────────────────────────────────────────────────────────────
-# ── XTTS v2 (multilingual TTS) ────────────────────────────────────────────────
-RUN rm -rf /usr/lib/python3/dist-packages/blinker* &&     pip install blinker --ignore-installed &&     pip install TTS
-
-# Pre-download XTTS v2 model weights
-RUN python3 -c "from TTS.api import TTS; TTS('tts_models/multilingual/multi-dataset/xtts_v2')"
 
 # ── Worker deps ───────────────────────────────────────────────────────────────
 RUN pip install runpod boto3 Pillow accelerate requests
