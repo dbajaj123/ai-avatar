@@ -107,7 +107,7 @@ RUN pip install torchvision==0.21.0 \
 
 # ── Worker deps ───────────────────────────────────────────────────────────────
 # ── XTTS v2 (multilingual TTS) ────────────────────────────────────────────────
-RUN pip install TTS
+RUN rm -rf /usr/lib/python3/dist-packages/blinker* &&     pip install blinker --ignore-installed &&     pip install TTS
 
 # Pre-download XTTS v2 model weights
 RUN python3 -c "from TTS.api import TTS; TTS('tts_models/multilingual/multi-dataset/xtts_v2')"
