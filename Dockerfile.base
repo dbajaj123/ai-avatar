@@ -11,11 +11,15 @@ RUN apt-get update && apt-get install -y \
 RUN rm -rf /usr/lib/python3/dist-packages/blinker* && \
     pip install blinker --ignore-installed && \
     pip install TTS && \
-    pip install "transformers==4.46.3"
+    pip install "transformers==4.46.3"  # pin to last 4.x which has BeamSearchScorer
 
-# Auto-accept license and pre-download XTTS v2 weights
+# Auto-accept license, patch weights_only for torch 2.6, pre-download XTTS v2 weights
 RUN sed -i 's/answer = input(" | | > ")/answer = "y"/' \
     /usr/local/lib/python3.11/dist-packages/TTS/utils/manage.py && \
+    sed -i 's/torch.load(f, map_location=map_location)/torch.load(f, map_location=map_location, weights_only=False)/' \
+    /usr/local/lib/python3.11/dist-packages/TTS/utils/io.py && \
+    sed -i 's/torch.load(speaker_file_path)/torch.load(speaker_file_path, weights_only=False)/' \
+    /usr/local/lib/python3.11/dist-packages/TTS/tts/layers/xtts/xtts_manager.py && \
     python3 -c "from TTS.api import TTS; TTS('tts_models/multilingual/multi-dataset/xtts_v2', gpu=False)"
 
 # ── ffmpeg static binary ──────────────────────────────────────────────────────
