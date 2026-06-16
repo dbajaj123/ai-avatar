@@ -27,7 +27,10 @@ def handler(job):
             return {"error": f"Missing required field: {field}"}
 
     job_id = job.get("id", str(uuid.uuid4()))
-    skip_enhance = job_input.get("skip_enhance", True)  # enhancement broken with imageio>=2.28, skip by default
+    skip_enhance = job_input.get("skip_enhance", True)
+    size = job_input.get("size", 512)  # 256 = fast, 512 = quality
+    still_mode = job_input.get("still_mode", True)  # True = minimal head motion
+    preprocess = job_input.get("preprocess", "crop")
 
     workdir = Path(tempfile.mkdtemp(prefix=f"job_{job_id}_"))
     print(f"[{job_id}] Working dir: {workdir}")
@@ -41,6 +44,7 @@ def handler(job):
 
         script  = job_input["script"]
         emotion = job_input.get("emotion", "neutral")
+        language = job_input.get("language", "en")
 
         # Stage 1: Voice cloning
         print(f"[{job_id}] Stage 1: Cloning voice...")
@@ -50,6 +54,7 @@ def handler(job):
             script=script,
             output_path=str(cloned_wav),
             emotion=emotion,
+            language=language,
         )
 
         # Stage 2: Video synthesis
@@ -59,6 +64,9 @@ def handler(job):
             photo_path=str(photo_path),
             audio_path=str(cloned_wav),
             output_path=str(raw_video),
+            still_mode=still_mode,
+            preprocess=preprocess,
+            size=size,
         )
 
         # Stage 3: Enhancement (optional)

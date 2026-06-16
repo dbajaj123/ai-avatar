@@ -76,6 +76,7 @@ def synthesize_video(
         print(f"[video/sadtalker] Dir contents: {list(result_dir.rglob('*'))}")
         raise RuntimeError("SadTalker produced no MP4 output")
 
+    # Prefer top-level mp4 (the final one with audio merged)
     top_level = [f for f in mp4_files if f.parent == result_dir]
     chosen = top_level[0] if top_level else mp4_files[0]
     shutil.move(str(chosen), output_path)

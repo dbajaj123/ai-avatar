@@ -1,6 +1,7 @@
 """
-Stage 1: Voice cloning via Chatterbox (Resemble AI)
-No fallback — fail loudly so we can see the real error.
+Stage 1: Voice cloning
+- English: Chatterbox (Resemble AI) - best quality for English
+- Other languages: XTTS v2 (Coqui) - multilingual support
 """
 
 import torch
@@ -12,15 +13,21 @@ def clone_voice(
     script: str,
     output_path: str,
     emotion: str = "neutral",
+    language: str = "en",
     exaggeration: float = 0.5,
     cfg_weight: float = 0.5,
 ):
+    if language == "en":
+        _clone_chatterbox(reference_audio, script, output_path, emotion, exaggeration, cfg_weight)
+    else:
+        _clone_xtts(reference_audio, script, output_path, language)
+
+
+def _clone_chatterbox(reference_audio, script, output_path, emotion, exaggeration, cfg_weight):
     from chatterbox.tts import ChatterboxTTS
     import torchaudio
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    print(f"[voice/chatterbox] CUDA available: {torch.cuda.is_available()}")
-    print(f"[voice/chatterbox] PyTorch version: {torch.__version__}")
     print(f"[voice/chatterbox] Loading model on {device}...")
 
     model = ChatterboxTTS.from_pretrained(device=device)
@@ -34,3 +41,22 @@ def clone_voice(
     )
     torchaudio.save(output_path, wav, model.sr)
     print(f"[voice/chatterbox] Saved → {output_path}")
+
+
+def _clone_xtts(reference_audio, script, output_path, language):
+    from TTS.api import TTS
+    import torchaudio
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    print(f"[voice/xtts] Loading XTTS v2 on {device} for language: {language}...")
+
+    tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(device)
+
+    print(f"[voice/xtts] Generating speech ({len(script)} chars)...")
+    tts.tts_to_file(
+        text=script,
+        speaker_wav=reference_audio,
+        language=language,
+        file_path=output_path,
+    )
+    print(f"[voice/xtts] Saved → {output_path}")

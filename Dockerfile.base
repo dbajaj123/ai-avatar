@@ -106,6 +106,13 @@ RUN pip install torchvision==0.21.0 \
     --index-url https://download.pytorch.org/whl/cu124
 
 # ── Worker deps ───────────────────────────────────────────────────────────────
+# ── XTTS v2 (multilingual TTS) ────────────────────────────────────────────────
+RUN pip install TTS
+
+# Pre-download XTTS v2 model weights
+RUN python3 -c "from TTS.api import TTS; TTS('tts_models/multilingual/multi-dataset/xtts_v2')"
+
+# ── Worker deps ───────────────────────────────────────────────────────────────
 RUN pip install runpod boto3 Pillow accelerate requests
 
 ENV SADTALKER_DIR=/workspace/SadTalker
