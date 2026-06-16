@@ -13,7 +13,7 @@ RUN rm -rf /usr/lib/python3/dist-packages/blinker* && \
     pip install TTS
 
 # Pre-download XTTS v2 model weights
-RUN TTS_AGREE_TERMS=1 python3 -c "from TTS.api import TTS; TTS('tts_models/multilingual/multi-dataset/xtts_v2', gpu=False)"
+RUN sed -i 's/answer = input(" | | > ")/answer = "y"/'     /usr/local/lib/python3.11/dist-packages/TTS/utils/manage.py &&     python3 -c "from TTS.api import TTS; TTS('tts_models/multilingual/multi-dataset/xtts_v2', gpu=False)"
 
 # ── ffmpeg static binary ──────────────────────────────────────────────────────
 RUN wget https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz \
