@@ -12,7 +12,7 @@ def clone_voice(
     script: str,
     output_path: str,
     language: str = "en",
-    emotion: str = "neutral",  # kept for API compatibility, XTTS doesn't ue emotion
+    emotion: str = "neutral",  # kept for API compatibility, XTTS doesn't use emotion
     **kwargs,
 ):
     from TTS.api import TTS
